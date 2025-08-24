@@ -10,9 +10,15 @@ int main(){
     for(char i:s)char_freq[i]++;
     Encode encoder(char_freq);
     encoder.Start();
-    for(auto i:encoder.find_translation_table()){
-        cout<<i.first<<" : "<<i.second<<"\n";
+    map<char, string>translation_table = encoder.find_translation_table();
+    ofstream encodedmsg("EncodedMsg.txt");
+    if(!encodedmsg){
+        cout<<"Couldn't open the file\n";
+        return 0;
     }
-    
+    for(char i:s){
+        encodedmsg<<translation_table[i];
+    }
+    cout<<"Encoding Message has been saved in: build\\EncodedMsg.txt\n";
     return 0;
 }

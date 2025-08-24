@@ -2,11 +2,7 @@
 
 
 Encode::Encode(const std::map<char, long long>& mp)
-    : mp(mp) 
-{
-    for(auto i : mp)
-        std::cout << i.first << ", " << i.second << '\n';
-}
+    : mp(mp) {}
 void Encode::dfs(Node *root, const std::string& s, std::map<char, std::string>& table) {
     if(!root) return;
     if (!(root->left_node || root->right_node)) {
