@@ -1,35 +1,33 @@
 #pragma once
-#include<bits/stdc++.h>
+#include <map>
+#include <queue>
+#include <string>
+#include <iostream>
 #include "Node.h"
-class Encode{
+
+class Encode {
 public:
-    std::map<char, long long>mp;
+    std::map<char, long long> mp;
+
     struct compare{
-        bool operator()(Node *a, Node *b){
-            if(a->frequency<=b->frequency){
+        bool operator()(Node *a, Node *b){ 
+            if(a->frequency<=b->frequency){ 
                 return false;
-            }else return true;
+            }
+            return true; 
         }
     };
-    priority_queue<Node*, vector<Node*>, compare>PQ;
-    void Start(){
-        for(auto i:this->mp){
-            PQ.push(new Node(i.second, i.first, nullptr, nullptr));
-        }
-        while(PQ.size()>=2){
-            Node *left = PQ.top(); 
-            PQ.pop();
-            Node *right = PQ.top();
-            PQ.pop();
-            Node *merged = new Node(left->frequency+right->frequency, '\0', left, right);
-            PQ.push(merged);
-        }
-        Node *root = PQ.top();
-        
 
-    }
+    std::priority_queue<Node*, std::vector<Node*>, compare> PQ;
 
-    Encode(std::map<char, long long>mp);
+    Encode(const std::map<char, long long>& mp);
+
+    void Start();
+
+    std::map<char, std::string> find_translation_table();
+
 private:
+    std::map<char, std::string> table;
 
+    void dfs(Node *root, const std::string& s, std::map<char, std::string>& table);
 };
