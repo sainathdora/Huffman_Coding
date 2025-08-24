@@ -9,4 +9,4 @@
   </li>
 </ul>
 <p>you can find the <em>EncodedMsg.txt</em> inside build tree</p>
-<p>add, input.txt in build directory</p>
+<p>add input.txt in build directory</p>
