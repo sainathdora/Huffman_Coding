@@ -24,9 +24,13 @@ void Encode::Start() {
         PQ.push(merged);
     }
     Node *root = PQ.top();
+    this->root_node = root;
     dfs(root, "", table);
 }
 
 std::map<char, std::string> Encode::find_translation_table() {
     return table;
+}
+Node* Encode::find_root(){
+    return this->root_node;
 }

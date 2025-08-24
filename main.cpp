@@ -1,4 +1,5 @@
 #include "Encode.h"
+#include "Decode.h"
 #include <fstream>
 using namespace std;
 
@@ -16,9 +17,18 @@ int main(){
         cout<<"Couldn't open the file\n";
         return 0;
     }
+    string encoded_message = "";
     for(char i:s){
         encodedmsg<<translation_table[i];
+        encoded_message += translation_table[i];
     }
     cout<<"Encoding Message has been saved in: build\\EncodedMsg.txt\n";
+
+
+    cout<<"Decoding the: "<<encoded_message<<"\n";
+    
+    Decode decoder(encoder);
+    decoder.Construct_original_msg(encoded_message);
+    decoder.print_decoded_msg();
     return 0;
 }
