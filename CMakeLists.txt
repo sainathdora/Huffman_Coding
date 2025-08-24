@@ -1,3 +1,5 @@
 cmake_minimum_required(VERSION 3.26)
 project(HuffMan\ Encoding)
-
+add_subdirectory(lib)
+add_executable(App main.cpp)
+target_link_libraries(App PRIVATE EncodeLib)
