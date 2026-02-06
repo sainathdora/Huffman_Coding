@@ -3,30 +3,44 @@
 #include <fstream>
 using namespace std;
 
-int main(){
-    freopen("input.txt", "r", stdin);
+int main()
+{
+    ifstream infile("input.txt", ios::binary);
+    char ch;
+    map<char, long long> char_freq;
     string s;
-    cin>>s;
-    map<char, long long>char_freq;
-    for(char i:s)char_freq[i]++;
+    while (infile.get(ch))
+    {
+        s += ch;
+        char_freq[ch]++;
+    }
     Encode encoder(char_freq);
     encoder.Start();
-    map<char, string>translation_table = encoder.find_translation_table();
+    map<char, string> translation_table = encoder.find_translation_table();
     ofstream encodedmsg("EncodedMsg.txt");
-    if(!encodedmsg){
-        cout<<"Couldn't open the file\n";
+    if (!encodedmsg)
+    {
+        cout << "Couldn't open the file\n";
         return 0;
     }
     string encoded_message = "";
-    for(char i:s){
-        encodedmsg<<translation_table[i];
+    for (char i : s)
+    {
+        encodedmsg << translation_table[i];
         encoded_message += translation_table[i];
     }
-    cout<<"Encoding Message has been saved in: build\\EncodedMsg.txt\n";
+    ofstream x("input.huff");
+    // store the first 8 bytes to store encoded message size or no of bits
+    long long total_bits = encoded_message.size();
+    x.write(reinterpret_cast<char *>(&total_bits), 8);
+    cout << "bits = " << total_bits << "\n";
+    // Now store the table size/no of unique characters;
+    unsigned char no_of_unique_chars = translation_table.size();
+    x.put(no_of_unique_chars);
+    cout << "Encoding Message has been saved in: build\\EncodedMsg.txt\n";
 
+    cout << "Decoding the: " << encoded_message << "\n";
 
-    cout<<"Decoding the: "<<encoded_message<<"\n";
-    
     Decode decoder(encoder);
     decoder.Construct_original_msg(encoded_message);
     decoder.print_decoded_msg();
