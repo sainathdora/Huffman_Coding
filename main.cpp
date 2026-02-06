@@ -37,6 +37,16 @@ int main()
     // Now store the table size/no of unique characters;
     unsigned char no_of_unique_chars = translation_table.size();
     x.put(no_of_unique_chars);
+    // Now store chuncks(char + Int)
+    for (auto i : char_freq)
+    {
+        // encode the char
+        x.put(i.first);
+        // now encode the integer
+        x.write(reinterpret_cast<char *>(&i.second), 4);
+    }
+    // Now write the bits into the file
+
     cout << "Encoding Message has been saved in: build\\EncodedMsg.txt\n";
 
     cout << "Decoding the: " << encoded_message << "\n";
