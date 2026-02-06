@@ -1,5 +1,6 @@
 #include "Encode.h"
 #include "Decode.h"
+#include <bitset>
 #include <fstream>
 using namespace std;
 
@@ -46,7 +47,21 @@ int main()
         x.write(reinterpret_cast<char *>(&i.second), 4);
     }
     // Now write the bits into the file
+    string temp = "";
 
+    for (char bit : encoded_message)
+    {
+        temp += bit;
+
+        if (temp.length() == 8)
+        {
+            bitset<8> bin(temp);
+            char c = static_cast<char>(bin.to_ulong());
+            cout << "Processing " << temp << " -> " << c << "\n";
+            x.put(c);
+            temp.clear();
+        }
+    }
     cout << "Encoding Message has been saved in: build\\EncodedMsg.txt\n";
 
     cout << "Decoding the: " << encoded_message << "\n";
