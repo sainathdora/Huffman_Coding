@@ -2,7 +2,7 @@
 <h2>Steps to run this project</h2>
 <ul>
   <li>clone this repo in a directory say user/foo</li>
-  <li>create another directory in user/foo</li>
+  
   <li>inside the repo, run these:
     <h4>cmake -B ./build</h4>
     <h4>Add the <code>input.txt</code> in your build directory</h4>
