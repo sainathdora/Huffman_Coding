@@ -2,75 +2,88 @@
 #include "Decode.h"
 #include <bitset>
 #include <fstream>
+#include <iostream>
+#include <map>
+#include <vector>
+
 using namespace std;
 
 int main()
 {
-    ifstream infile("input.txt", ios::binary);
+    // ======================================== Part 1: Encoding =====================================
+    string input_path = "input.txt";
+    ifstream infile(input_path, ios::binary);
+    if (!infile)
+    {
+        cout << "Error: Could not open input.txt\n";
+        return 1;
+    }
+
     char ch;
     map<char, long long> char_freq;
-    string s;
+    string original_content = "";
     while (infile.get(ch))
     {
-        s += ch;
+        original_content += ch;
         char_freq[ch]++;
     }
+    infile.close();
+
     Encode encoder(char_freq);
     encoder.Start();
     map<char, string> translation_table = encoder.find_translation_table();
-    ofstream encodedmsg("EncodedMsg.txt");
-    if (!encodedmsg)
-    {
-        cout << "Couldn't open the file\n";
-        return 0;
-    }
-    string encoded_message = "";
-    for (char i : s)
-    {
-        encodedmsg << translation_table[i];
-        encoded_message += translation_table[i];
-    }
-    ofstream x("input.huff");
-    // store the first 8 bytes to store encoded message size or no of bits
-    long long total_bits = encoded_message.size();
-    x.write(reinterpret_cast<char *>(&total_bits), 8);
-    cout << "bits = " << total_bits << "\n";
-    // Now store the table size/no of unique characters;
-    unsigned char no_of_unique_chars = translation_table.size();
-    x.put(no_of_unique_chars);
-    // Now store chuncks(char + Int)
-    for (auto i : char_freq)
-    {
-        // encode the char
-        x.put(i.first);
-        // now encode the integer
-        x.write(reinterpret_cast<char *>(&i.second), 4);
-    }
-    // Now write the bits into the file
-    string temp = "";
 
-    for (char bit : encoded_message)
+    string encoded_bit_string = "";
+    for (char i : original_content)
+    {
+        encoded_bit_string += translation_table[i];
+    }
+
+    ofstream x("input.huff", ios::binary);
+
+    // 1. Store total bits (8 bytes)
+    long long total_bits = encoded_bit_string.size();
+    x.write(reinterpret_cast<const char *>(&total_bits), 8);
+
+    // 2. Store number of unique characters (1 byte)
+    unsigned char no_of_unique_chars = static_cast<unsigned char>(translation_table.size());
+    x.put(no_of_unique_chars);
+
+    // 3. Store Frequency Table (Char + Int(4 byte) Freq)
+    for (auto const &[character, freq] : char_freq)
+    {
+        x.put(character);
+        int freq_small = static_cast<int>(freq);
+        x.write(reinterpret_cast<const char *>(&freq_small), 4);
+    }
+
+    // 4. Write Bits (Packed into bytes)
+    string temp = "";
+    for (char bit : encoded_bit_string)
     {
         temp += bit;
-
         if (temp.length() == 8)
         {
             bitset<8> bin(temp);
-            char c = static_cast<char>(bin.to_ulong());
-            cout << "Processing " << temp << " -> " << c << "\n";
-            x.put(c);
+            x.put(static_cast<unsigned char>(bin.to_ulong()));
             temp.clear();
         }
     }
+    // Handle remaining bits (Padding)
+    if (!temp.empty())
+    {
+        while (temp.length() < 8)
+            temp += '0';
+        bitset<8> bin(temp);
+        x.put(static_cast<unsigned char>(bin.to_ulong()));
+    }
     x.close();
-    encodedmsg.close();
-    infile.close();
-    cout << "Encoding Message has been saved in: build\\EncodedMsg.txt\n";
-    // ======================================== Part - 2 Decoding =====================================
-    // Build the char and frequency table
+
+    // ======================================== Part 2: Decoding =====================================
     ifstream en_in("input.huff", ios::binary);
     if (!en_in)
         return 1;
+
     long long total_bits_2;
     en_in.read(reinterpret_cast<char *>(&total_bits_2), 8);
 
@@ -78,89 +91,59 @@ int main()
     en_in.read(reinterpret_cast<char *>(&table_size_byte), 1);
     int table_size = static_cast<int>(table_size_byte);
 
-    // Build the Map(Character and Frequency)
-    map<char, long long>
-        freq_table;
-
+    map<char, long long> freq_table;
     for (int i = 0; i < table_size; ++i)
     {
-        char ch;
-        int freq;
-
-        // Read 1 byte for the character
-        en_in.read(&ch, 1);
-
-        // Read 4 bytes for the integer frequency
-        en_in.read(reinterpret_cast<char *>(&freq), 4);
-
-        freq_table[ch] = freq;
+        char c_key;
+        int f_val;
+        en_in.read(&c_key, 1);
+        en_in.read(reinterpret_cast<char *>(&f_val), 4);
+        freq_table[c_key] = f_val;
     }
 
-    // Verification: Print the table
-    cout << "Table Size: " << table_size << endl;
-    for (auto const &[character, frequency] : freq_table)
-    {
-        cout << "'" << character << "': " << frequency << endl;
-    }
-    // First create the encoded object
     Encode encoded_obj_2(freq_table);
-    // Now find the translation table
     encoded_obj_2.Start();
-    map<char, string> translation_table_2 = encoded_obj_2.find_translation_table();
-    // Now we have the translation table, but dont need it tho
-    // Find the encoded string
-    string bit_stream = "";
-    unsigned char byte;
-    long long bits_read = 0;
 
-    // Read byte by byte until the end of the file
-    while (en_in.read(reinterpret_cast<char *>(&byte), 1))
+    string bit_stream = "";
+    unsigned char byte_read;
+    long long bits_processed = 0;
+
+    while (bits_processed < total_bits_2 && en_in.read(reinterpret_cast<char *>(&byte_read), 1))
     {
-        // Process each of the 8 bits in the byte
         for (int i = 7; i >= 0; --i)
         {
-            if (bits_read < total_bits)
+            if (bits_processed < total_bits_2)
             {
-                // Check if the i-th bit is set
-                if ((byte >> i) & 1)
-                {
-                    bit_stream += '1';
-                }
-                else
-                {
-                    bit_stream += '0';
-                }
-                bits_read++;
-            }
-            else
-            {
-                // We have reached the total_bits, ignore any remaining padding in this byte
-                break;
+                bit_stream += ((byte_read >> i) & 1) ? '1' : '0';
+                bits_processed++;
             }
         }
     }
-
-    cout << "Successfully read " << bit_stream.length() << " bits into the string." << endl;
+    en_in.close();
 
     Decode decoder(encoded_obj_2);
-
     decoder.Construct_original_msg(bit_stream);
-    string ded = decoder.decoded_message;
-    en_in.close();
-    // Open a new file
+
     ofstream dedcoded_file("out.txt");
-    dedcoded_file << ded;
+    dedcoded_file << decoder.decoded_message;
     dedcoded_file.close();
-    cout << "=======================================Bench Marks===================\n";
-    ifstream in("input.txt", ios::binary | ios::ate);
-    streamsize size = in.tellg();
-    cout << "Orignal file size = " << size << " Bytes\n";
-    ifstream comp("input.huff", ios::binary | ios::ate);
-    streamsize size_comp = comp.tellg();
-    cout << "Compressed File Size = " << size_comp << " Bytes\n";
-    double change = ((double)size - (double)size_comp) / (size);
-    cout << "Change(%) = " << change * 100 << "\n";
-    in.close();
-    comp.close();
+
+    // ======================================== Benchmarks =====================================
+    ifstream original_f(input_path, ios::binary | ios::ate);
+    ifstream compressed_f("input.huff", ios::binary | ios::ate);
+
+    streamsize size_orig = original_f.tellg();
+    streamsize size_comp = compressed_f.tellg();
+
+    cout << "\n--- Benchmarks ---\n";
+    cout << "Original size:   " << size_orig << " bytes\n";
+    cout << "Compressed size: " << size_comp << " bytes\n";
+
+    if (size_orig > 0)
+    {
+        double ratio = (1.0 - (double)size_comp / size_orig) * 100.0;
+        cout << "Space Saved:     " << ratio << "%\n";
+    }
+
     return 0;
 }
