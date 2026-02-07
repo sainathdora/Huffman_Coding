@@ -109,12 +109,49 @@ int main()
     // Now find the translation table
     encoded_obj_2.Start();
     map<char, string> translation_table_2 = encoded_obj_2.find_translation_table();
-    // Now we have the translation table
-    cout
-        << "Decoding the: " << encoded_message << "\n";
+    // Now we have the translation table, but dont need it tho
+    // Find the encoded string
+    string bit_stream = "";
+    unsigned char byte;
+    long long bits_read = 0;
 
-    Decode decoder(encoder);
-    decoder.Construct_original_msg(encoded_message);
-    decoder.print_decoded_msg();
+    // Read byte by byte until the end of the file
+    while (en_in.read(reinterpret_cast<char *>(&byte), 1))
+    {
+        // Process each of the 8 bits in the byte
+        for (int i = 7; i >= 0; --i)
+        {
+            if (bits_read < total_bits)
+            {
+                // Check if the i-th bit is set
+                if ((byte >> i) & 1)
+                {
+                    bit_stream += '1';
+                }
+                else
+                {
+                    bit_stream += '0';
+                }
+                bits_read++;
+            }
+            else
+            {
+                // We have reached the total_bits, ignore any remaining padding in this byte
+                break;
+            }
+        }
+    }
+
+    cout << "Successfully read " << bit_stream.length() << " bits into the string." << endl;
+
+    Decode decoder(encoded_obj_2);
+
+    decoder.Construct_original_msg(bit_stream);
+    string ded = decoder.decoded_message;
+    en_in.close();
+    // Open a new file
+    ofstream dedcoded_file("out.txt");
+    dedcoded_file << ded;
+    dedcoded_file.close();
     return 0;
 }
