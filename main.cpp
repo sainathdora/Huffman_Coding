@@ -160,5 +160,7 @@ int main()
     cout << "Compressed File Size = " << size_comp << " Bytes\n";
     double change = ((double)size - (double)size_comp) / (size);
     cout << "Change(%) = " << change * 100 << "\n";
+    in.close();
+    comp.close();
     return 0;
 }
