@@ -153,5 +153,14 @@ int main()
     ofstream dedcoded_file("out.txt");
     dedcoded_file << ded;
     dedcoded_file.close();
+    cout << "=======================================Bench Marks===================\n";
+    ifstream in("input.txt", ios::binary | ios::ate);
+    streamsize size = in.tellg();
+    cout << "Orignal file size = " << size << " Bytes\n";
+    ifstream comp("input.huff", ios::binary | ios::ate);
+    streamsize size_comp = comp.tellg();
+    cout << "Compressed File Size = " << size_comp << " Bytes\n";
+    double change = ((double)size - (double)size_comp) / (size);
+    cout << "Change(%) = " << change * 100 << "\n";
     return 0;
 }
