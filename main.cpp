@@ -71,18 +71,16 @@ int main()
     ifstream en_in("input.huff", ios::binary);
     if (!en_in)
         return 1;
-
-    // 1. Read the first 8 bytes (Total Bits)
     long long total_bits_2;
     en_in.read(reinterpret_cast<char *>(&total_bits_2), 8);
 
-    // 2. Read the 9th byte (Table Size)
     unsigned char table_size_byte;
     en_in.read(reinterpret_cast<char *>(&table_size_byte), 1);
     int table_size = static_cast<int>(table_size_byte);
 
-    // 3. Build the Map (Character and Frequency)
-    map<char, long long> freq_table;
+    // Build the Map(Character and Frequency)
+    map<char, long long>
+        freq_table;
 
     for (int i = 0; i < table_size; ++i)
     {
